@@ -14,10 +14,10 @@ mod camera;
 mod draw;
 mod instance;
 mod light;
-mod material;
 mod mesh;
 mod model;
 mod projection;
+mod renderer;
 mod state;
 mod texture;
 

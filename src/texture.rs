@@ -120,6 +120,7 @@ impl Texture {
         Ok(Self { texture, view, sampler })
     }
 
+    #[allow(dead_code)]
     pub fn load<P: AsRef<Path>>(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
