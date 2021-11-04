@@ -15,7 +15,6 @@ use wgpu::util::DeviceExt;
 use crate::camera::{CameraController, CameraRig, OrbitCamera, OrbitCameraController};
 use crate::instance::{Instance, InstanceRaw};
 use crate::model::{Model, ModelVertex, Vertex};
-use crate::projection::Projection;
 use crate::renderer::Renderer;
 use crate::texture::Texture;
 
@@ -29,7 +28,6 @@ pub struct State {
     instances: Vec<Instance>,
     mouse_pressed: bool,
     obj_model: Model,
-    projection: Projection,
     queue: wgpu::Queue,
     renderer: Renderer,
     pub size: winit::dpi::PhysicalSize<u32>,
@@ -66,68 +64,17 @@ impl State {
         surface.configure(&device, &config);
 
         let camera_rig = CameraRig::new((0.0, 5.0, 10.0));
-        let projection = Projection::new(config.width, config.height, Deg(45.0), 0.1, 100.0);
 
-        let camera_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }
-            ],
-            label: Some("camera_binding_group_layout"),
-        });
-        let light_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }
-            ],
-            label: None,
-        });
-
-        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("render Pipeline Layout"),
-            bind_group_layouts: &[
-                &camera_bind_group_layout,
-                &light_bind_group_layout,
-            ],
-            push_constant_ranges: &[],
-        });
         let mut renderer = Renderer::new(
             &device,
-            &render_pipeline_layout,
             &config,
             Some(Texture::DEPTH_FORMAT),
             &[ModelVertex::desc(), InstanceRaw::desc()],
         );
 
-        renderer.update_camera_uniform(&camera_rig.camera, &projection);
-        renderer.set_camera_bind_group(&device, &camera_bind_group_layout);
-        renderer.set_light_bind_group(&device, &light_bind_group_layout);
-
-        let light_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Light Pipeline Layout"),
-            bind_group_layouts: &[&camera_bind_group_layout, &light_bind_group_layout],
-            push_constant_ranges: &[],
-        });
-
-        renderer.set_light_render_pipeline(
+        renderer.update_camera_uniform(&camera_rig.camera);
+        renderer.enable_light_render_pipeline(
             &device,
-            &light_pipeline_layout,
             config.format,
             Some(Texture::DEPTH_FORMAT),
             &[ModelVertex::desc()],
@@ -136,7 +83,7 @@ impl State {
         let res_dir = std::path::Path::new(env!("OUT_DIR")).join("res");
         let obj_model = Model::load(
             &device,
-            res_dir.join("pumpkin.obj"),
+            res_dir.join("cube.obj"),
         ).unwrap();
 
         let instances = (0..NUM_INSTANCES_PER_ROW).flat_map(|z| {
@@ -174,7 +121,6 @@ impl State {
             instances,
             mouse_pressed: false,
             obj_model,
-            projection,
             queue,
             renderer,
             size,
@@ -189,7 +135,6 @@ impl State {
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);
             self.renderer.resize(&self.device, &self.config);
-            self.projection.resize(new_size.width, new_size.height);
         }
     }
 
@@ -228,7 +173,7 @@ impl State {
 
     pub fn update(&mut self, dt: std::time::Duration) {
         self.camera_rig.controller.update_camera(&mut self.camera_rig.camera, dt);
-        self.renderer.update_camera_uniform(&self.camera_rig.camera, &self.projection);
+        self.renderer.update_camera_uniform(&self.camera_rig.camera);
         self.renderer.update(&self.queue, dt);
     }
 
