@@ -41,6 +41,7 @@ impl Vertex for ModelVertex {
 }
 
 pub struct Model {
+  pub color: [f32; 4],
   pub meshes: Vec<Mesh>,
 
 }
@@ -107,6 +108,13 @@ impl Model {
       })
     }).collect::<Result<Vec<_>>>()?;
 
-    Ok(Self { meshes })
+    Ok(Self { color: [0.3, 0.3, 0.3, 1.0], meshes })
   }
+}
+
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct ModelUniform {
+    pub color: [f32; 4],
 }
