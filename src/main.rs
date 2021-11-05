@@ -18,7 +18,7 @@ mod light;
 mod mesh;
 mod model;
 mod projection;
-mod renderer;
+mod render;
 mod state;
 mod texture;
 mod uniform;

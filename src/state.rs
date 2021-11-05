@@ -12,11 +12,13 @@ use winit::{
 };
 use wgpu::util::DeviceExt;
 
-use crate::camera::{CameraController, CameraRig, OrbitCamera, OrbitCameraController};
-use crate::instance::{Instance, InstanceRaw};
-use crate::model::{Model, ModelVertex, Vertex};
-use crate::renderer::Renderer;
-use crate::texture::Texture;
+use crate::{
+  camera::{CameraController, CameraRig, OrbitCamera, OrbitCameraController},
+  instance::Instance,
+  model::{Model, ModelVertex, Vertex},
+  render::Renderer,
+  texture::Texture,
+};
 
 const NUM_INSTANCES_PER_ROW: u32 = 1;
 
@@ -25,7 +27,6 @@ pub struct State {
   config: wgpu::SurfaceConfiguration,
   device: wgpu::Device,
   instance_buffer: wgpu::Buffer,
-  instances: Vec<Instance>,
   mouse_pressed: bool,
   obj_model: Model,
   queue: wgpu::Queue,
@@ -65,13 +66,9 @@ impl State {
 
     let camera_rig = CameraRig::new((0.0, 5.0, 10.0));
 
-    let mut renderer = Renderer::new(
-      &device,
-      &config,
-      Some(Texture::DEPTH_FORMAT),
-      &[ModelVertex::desc(), InstanceRaw::desc()],
-    );
+    let mut renderer = Renderer::new(&device, &config);
 
+    renderer.add_model(&device, config.format);
     renderer.update_camera_uniform(&camera_rig.camera);
 
     let res_dir = std::path::Path::new(env!("OUT_DIR")).join("res");
@@ -112,7 +109,6 @@ impl State {
       config,
       device,
       instance_buffer,
-      instances,
       mouse_pressed: false,
       obj_model,
       queue,
@@ -172,7 +168,6 @@ impl State {
       &view,
       &self.obj_model,
       &self.instance_buffer,
-      0..self.instances.len() as u32,
     );
 
     Ok(())
