@@ -7,7 +7,7 @@ use cgmath::{
   Zero,
 };
 use winit::{
-  event::{DeviceEvent, ElementState, KeyboardInput},
+  event::{DeviceEvent, ElementState, KeyboardInput, VirtualKeyCode},
   window::Window,
 };
 use wgpu::util::DeviceExt;
@@ -73,17 +73,11 @@ impl State {
     );
 
     renderer.update_camera_uniform(&camera_rig.camera);
-    renderer.enable_light_render_pipeline(
-      &device,
-      config.format,
-      Some(Texture::DEPTH_FORMAT),
-      &[ModelVertex::desc()],
-    );
 
     let res_dir = std::path::Path::new(env!("OUT_DIR")).join("res");
     let obj_model = Model::load(
       &device,
-      res_dir.join("cube.obj"),
+      res_dir.join("pumpkin.obj"),
     ).unwrap();
 
     let instances = (0..NUM_INSTANCES_PER_ROW).flat_map(|z| {
@@ -128,16 +122,6 @@ impl State {
     }
   }
 
-  pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-    if new_size.width > 0 && new_size.height > 0 {
-      self.size = new_size;
-      self.config.width = new_size.width;
-      self.config.height = new_size.height;
-      self.surface.configure(&self.device, &self.config);
-      self.renderer.resize(&self.device, &self.config);
-    }
-  }
-
   pub fn input(&mut self, event: &DeviceEvent) -> bool {
     match event {
       DeviceEvent::Key(
@@ -147,7 +131,14 @@ impl State {
           ..
         }
       ) => {
-        self.camera_rig.controller.process_keyboard(*key, *state);
+        match (*key, *state) {
+          (VirtualKeyCode::L, ElementState::Pressed) => {
+            self.toggle_light_render();
+          }
+          _ => {
+            self.camera_rig.controller.process_keyboard(*key, *state);
+          }
+        }
         true
       }
       DeviceEvent::MouseWheel { delta, .. } => {
@@ -171,12 +162,6 @@ impl State {
     }
   }
 
-  pub fn update(&mut self, dt: std::time::Duration) {
-    self.camera_rig.controller.update_camera(&mut self.camera_rig.camera, dt);
-    self.renderer.update_camera_uniform(&self.camera_rig.camera);
-    self.renderer.update(&self.queue, dt);
-  }
-
   pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
     let output = self.surface.get_current_frame()?.output;
     let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
@@ -191,5 +176,34 @@ impl State {
     );
 
     Ok(())
+  }
+
+  pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+    if new_size.width > 0 && new_size.height > 0 {
+      self.size = new_size;
+      self.config.width = new_size.width;
+      self.config.height = new_size.height;
+      self.surface.configure(&self.device, &self.config);
+      self.renderer.resize(&self.device, &self.config);
+    }
+  }
+
+  pub fn toggle_light_render(&mut self) {
+    if self.renderer.light_render_pipeline_enabled() {
+      self.renderer.disable_light_render_pipeline();
+    } else {
+      self.renderer.enable_light_render_pipeline(
+        &self.device,
+        self.config.format,
+        Some(Texture::DEPTH_FORMAT),
+        &[ModelVertex::desc()],
+      );
+    }
+  }
+
+  pub fn update(&mut self, dt: std::time::Duration) {
+    self.camera_rig.controller.update_camera(&mut self.camera_rig.camera, dt);
+    self.renderer.update_camera_uniform(&self.camera_rig.camera);
+    self.renderer.update(&self.queue, dt);
   }
 }

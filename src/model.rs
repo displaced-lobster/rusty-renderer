@@ -15,6 +15,7 @@ pub trait Vertex {
 pub struct ModelVertex {
   position: [f32; 3],
   normal: [f32; 3],
+  color: [f32; 4],
 }
 
 impl Vertex for ModelVertex {
@@ -34,6 +35,11 @@ impl Vertex for ModelVertex {
           offset: mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
           shader_location: 1,
           format: wgpu::VertexFormat::Float32x3,
+        },
+        wgpu::VertexAttribute {
+          offset: mem::size_of::<[f32; 6]>() as wgpu::BufferAddress,
+          shader_location: 2,
+          format: wgpu::VertexFormat::Float32x4,
         },
       ],
     }
@@ -69,6 +75,7 @@ impl Model {
             m.mesh.normals[i * 3 + 1],
             m.mesh.normals[i * 3 + 2],
           ].into(),
+          color: [0.0, 1.0, 0.0, 1.0],
         }
       }).collect::<Vec<_>>();
 

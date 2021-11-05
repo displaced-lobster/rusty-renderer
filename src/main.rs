@@ -11,6 +11,7 @@ use winit::{
 };
 
 mod camera;
+mod color;
 mod draw;
 mod instance;
 mod light;
@@ -20,6 +21,7 @@ mod projection;
 mod renderer;
 mod state;
 mod texture;
+mod uniform;
 
 use state::State;
 
