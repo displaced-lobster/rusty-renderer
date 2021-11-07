@@ -47,7 +47,6 @@ impl Vertex for ModelVertex {
 }
 
 pub struct Model {
-  pub color: [f32; 4],
   pub meshes: Vec<Mesh>,
 
 }
@@ -79,18 +78,6 @@ impl Model {
         }
       }).collect::<Vec<_>>();
 
-      let indices = &m.mesh.indices;
-      let mut triangles_included = (0..vertices.len()).collect::<Vec<_>>();
-
-      for c in indices.chunks(3) {
-
-        for i in 0..3 {
-          let index = c[i] as usize;
-
-          triangles_included[index] += 1;
-        }
-      }
-
       let vertex_buffer = device.create_buffer_init(
         &wgpu::util::BufferInitDescriptor {
           label: Some(&format!("{:?} Vertex Buffer", path.as_ref())),
@@ -115,7 +102,7 @@ impl Model {
       })
     }).collect::<Result<Vec<_>>>()?;
 
-    Ok(Self { color: [0.3, 0.3, 0.3, 1.0], meshes })
+    Ok(Self { meshes })
   }
 }
 
