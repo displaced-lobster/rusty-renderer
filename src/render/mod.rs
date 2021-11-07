@@ -1,6 +1,8 @@
+pub mod light_renderer;
 pub mod model_renderer;
 pub mod renderer;
 
+pub use light_renderer::LightRenderer;
 pub use model_renderer::ModelRenderer;
 pub use renderer::Renderer;
 

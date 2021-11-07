@@ -184,10 +184,10 @@ impl State {
   }
 
   pub fn toggle_light_render(&mut self) {
-    if self.renderer.light_render_pipeline_enabled() {
-      self.renderer.disable_light_render_pipeline();
+    if self.renderer.light_render_enabled() {
+      self.renderer.disable_light_render();
     } else {
-      self.renderer.enable_light_render_pipeline(
+      self.renderer.enable_light_render(
         &self.device,
         self.config.format,
         Some(Texture::DEPTH_FORMAT),

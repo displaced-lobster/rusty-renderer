@@ -8,12 +8,11 @@ use cgmath::{
 use crate::{
   camera::{Camera, CameraUniform},
   color::ColorUniform,
-  draw::DrawLight,
   instance::InstanceRaw,
   light::LightUniform,
   model::{ModelVertex, Vertex},
   projection::Projection,
-  render::{create_render_pipeline, ModelRenderer},
+  render::{LightRenderer, ModelRenderer},
   texture::Texture,
   uniform::Uniform,
 };
@@ -22,9 +21,9 @@ pub struct Renderer {
   ambient_uniform: Uniform<ColorUniform>,
   camera_uniform: Uniform<CameraUniform>,
   depth_texture: Texture,
-  model_renderer: Option<ModelRenderer>,
-  light_render_pipeline: Option<wgpu::RenderPipeline>,
+  light_renderer: Option<LightRenderer>,
   light_uniform: Uniform<LightUniform>,
+  model_renderer: Option<ModelRenderer>,
   projection: Projection,
 }
 
@@ -52,9 +51,9 @@ impl Renderer {
       ambient_uniform,
       camera_uniform,
       depth_texture,
-      model_renderer: None,
-      light_render_pipeline: None,
+      light_renderer: None,
       light_uniform,
+      model_renderer: None,
       projection,
     }
   }
@@ -77,43 +76,28 @@ impl Renderer {
     ));
   }
 
-  pub fn disable_light_render_pipeline(&mut self) {
-    self.light_render_pipeline = None;
+  pub fn disable_light_render(&mut self) {
+    self.light_renderer = None;
   }
 
-  pub fn enable_light_render_pipeline(
+  pub fn enable_light_render(
     &mut self,
     device: &wgpu::Device,
     color_format: wgpu::TextureFormat,
     depth_format: Option<wgpu::TextureFormat>,
     vertex_layouts: &[wgpu::VertexBufferLayout],
   ) {
-    let light_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-      label: Some("Light Pipeline Layout"),
-      bind_group_layouts: &[&self.camera_uniform.bind_group_layout, &self.light_uniform.bind_group_layout],
-      push_constant_ranges: &[],
-    });
-
-    self.light_render_pipeline = {
-      let shader = wgpu::ShaderModuleDescriptor {
-        label: Some("Light Shader"),
-        source: wgpu::ShaderSource::Wgsl(include_str!("shaders/light.wgsl").into()),
-      };
-
-      Some(create_render_pipeline(
-        device,
-        &light_pipeline_layout,
-        color_format,
-        depth_format,
-        vertex_layouts,
-        shader,
-        "Light Render Pipeline",
-      ))
-    };
+    self.light_renderer = Some(LightRenderer::new(
+      device,
+      &[&self.camera_uniform.bind_group_layout, &self.light_uniform.bind_group_layout],
+      color_format,
+      depth_format,
+      vertex_layouts,
+    ));
   }
 
-  pub fn light_render_pipeline_enabled(&self) -> bool {
-    match self.light_render_pipeline {
+  pub fn light_render_enabled(&self) -> bool {
+    match self.light_renderer {
       Some(_) => true,
       _ => false
     }
@@ -159,16 +143,13 @@ impl Renderer {
       });
       render_pass.set_vertex_buffer(1, instance_buffer.slice(..));
 
-      match &self.light_render_pipeline {
-        Some(render_pipeline) => {
-          render_pass.set_pipeline(&render_pipeline);
-          render_pass.draw_light_model(
-            model,
-            &self.camera_uniform.bind_group,
-            &self.light_uniform.bind_group,
-          );
-        }
-        _ => ()
+      if let Some(renderer) = &self.light_renderer {
+        renderer.render(
+          &mut render_pass,
+          model,
+          &self.camera_uniform.bind_group,
+          &self.light_uniform.bind_group,
+        )
       }
 
       if let Some(renderer) = &self.model_renderer {
