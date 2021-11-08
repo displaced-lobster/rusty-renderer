@@ -21,10 +21,11 @@ pub struct Renderer {
   ambient_uniform: Uniform<ColorUniform>,
   camera_uniform: Uniform<CameraUniform>,
   depth_texture: Texture,
-  light_renderer: Option<LightRenderer>,
+  light_renderer: LightRenderer,
   light_uniform: Uniform<LightUniform>,
-  model_renderer: Option<ModelRenderer>,
+  model_renderer: ModelRenderer,
   projection: Projection,
+  render_light: bool,
 }
 
 impl Renderer {
@@ -44,63 +45,46 @@ impl Renderer {
       "light",
     );
 
+    let depth_format = Some(Texture::DEPTH_FORMAT);
     let depth_texture = Texture::create_depth_texture(device, config, "depth_texture");
+    let vertex_layouts = [ModelVertex::desc(), InstanceRaw::desc()];
+    let light_renderer = LightRenderer::new(
+      device,
+      &[
+        &camera_uniform.bind_group_layout,
+        &light_uniform.bind_group_layout
+      ],
+      config.format,
+      depth_format,
+      &vertex_layouts,
+    );
+    let model_renderer = ModelRenderer::new(
+      device,
+      &[
+        &ambient_uniform.bind_group_layout,
+        &camera_uniform.bind_group_layout,
+        &light_uniform.bind_group_layout,
+      ],
+      config.format,
+      depth_format,
+      &vertex_layouts,
+    );
     let projection = Projection::new(config.width, config.height, Deg(45.0), 0.1, 100.0);
 
     Self {
       ambient_uniform,
       camera_uniform,
       depth_texture,
-      light_renderer: None,
+      light_renderer,
       light_uniform,
-      model_renderer: None,
+      model_renderer,
       projection,
+      render_light: false,
     }
   }
 
-  pub fn add_model(
-    &mut self,
-    device: &wgpu::Device,
-    color_format: wgpu::TextureFormat,
-  ) {
-    self.model_renderer = Some(ModelRenderer::new(
-      device,
-      &[
-        &self.ambient_uniform.bind_group_layout,
-        &self.camera_uniform.bind_group_layout,
-        &self.light_uniform.bind_group_layout,
-      ],
-      color_format,
-      Some(Texture::DEPTH_FORMAT),
-      &[ModelVertex::desc(), InstanceRaw::desc()],
-    ));
-  }
-
-  pub fn disable_light_render(&mut self) {
-    self.light_renderer = None;
-  }
-
-  pub fn enable_light_render(
-    &mut self,
-    device: &wgpu::Device,
-    color_format: wgpu::TextureFormat,
-    depth_format: Option<wgpu::TextureFormat>,
-    vertex_layouts: &[wgpu::VertexBufferLayout],
-  ) {
-    self.light_renderer = Some(LightRenderer::new(
-      device,
-      &[&self.camera_uniform.bind_group_layout, &self.light_uniform.bind_group_layout],
-      color_format,
-      depth_format,
-      vertex_layouts,
-    ));
-  }
-
-  pub fn light_render_enabled(&self) -> bool {
-    match self.light_renderer {
-      Some(_) => true,
-      _ => false
-    }
+  pub fn toggle_light_render(&mut self) {
+    self.render_light = !self.render_light;
   }
 
   pub fn resize(&mut self, device: &wgpu::Device, config: &wgpu::SurfaceConfiguration) {
@@ -143,24 +127,22 @@ impl Renderer {
       });
       render_pass.set_vertex_buffer(1, instance_buffer.slice(..));
 
-      if let Some(renderer) = &self.light_renderer {
-        renderer.render(
+      if self.render_light {
+        self.light_renderer.render(
           &mut render_pass,
           model,
           &self.camera_uniform.bind_group,
           &self.light_uniform.bind_group,
-        )
+        );
       }
 
-      if let Some(renderer) = &self.model_renderer {
-        renderer.render(
-          &mut render_pass,
-          model,
-          &self.ambient_uniform.bind_group,
-          &self.camera_uniform.bind_group,
-          &self.light_uniform.bind_group,
-        )
-      }
+      self.model_renderer.render(
+        &mut render_pass,
+        model,
+        &self.ambient_uniform.bind_group,
+        &self.camera_uniform.bind_group,
+        &self.light_uniform.bind_group,
+      );
     }
     queue.submit(std::iter::once(encoder.finish()));
   }

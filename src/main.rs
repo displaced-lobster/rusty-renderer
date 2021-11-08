@@ -30,6 +30,9 @@ fn main() {
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
     let mut state = pollster::block_on(State::new(&window));
+
+    state.prompt_for_model().unwrap();
+
     let mut last_render_time = std::time::Instant::now();
 
     event_loop.run(move |event, _, control_flow| {

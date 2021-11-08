@@ -1,3 +1,4 @@
+use anyhow::Result;
 use cgmath::{
   Deg,
   InnerSpace,
@@ -15,9 +16,8 @@ use wgpu::util::DeviceExt;
 use crate::{
   camera::{CameraController, CameraRig, OrbitCamera, OrbitCameraController},
   instance::Instance,
-  model::{Model, ModelVertex, Vertex},
+  model::Model,
   render::Renderer,
-  texture::Texture,
 };
 
 const NUM_INSTANCES_PER_ROW: u32 = 1;
@@ -25,10 +25,11 @@ const NUM_INSTANCES_PER_ROW: u32 = 1;
 pub struct State {
   camera_rig: CameraRig<OrbitCamera, OrbitCameraController>,
   config: wgpu::SurfaceConfiguration,
+  cube_model: Model,
   device: wgpu::Device,
   instance_buffer: wgpu::Buffer,
   mouse_pressed: bool,
-  obj_model: Model,
+  obj_model: Option<Model>,
   queue: wgpu::Queue,
   renderer: Renderer,
   pub size: winit::dpi::PhysicalSize<u32>,
@@ -68,13 +69,12 @@ impl State {
 
     let mut renderer = Renderer::new(&device, &config);
 
-    renderer.add_model(&device, config.format);
     renderer.update_camera_uniform(&camera_rig.camera);
 
     let res_dir = std::path::Path::new(env!("OUT_DIR")).join("res");
-    let obj_model = Model::load(
+    let cube_model = Model::load(
       &device,
-      res_dir.join("pumpkin.obj"),
+      res_dir.join("cube.obj"),
     ).unwrap();
 
     let instances = (0..NUM_INSTANCES_PER_ROW).flat_map(|z| {
@@ -107,10 +107,11 @@ impl State {
     Self {
       camera_rig,
       config,
+      cube_model,
       device,
       instance_buffer,
       mouse_pressed: false,
-      obj_model,
+      obj_model: None,
       queue,
       renderer,
       size,
@@ -129,7 +130,7 @@ impl State {
       ) => {
         match (*key, *state) {
           (VirtualKeyCode::L, ElementState::Pressed) => {
-            self.toggle_light_render();
+            self.renderer.toggle_light_render();
           }
           _ => {
             self.camera_rig.controller.process_keyboard(*key, *state);
@@ -158,15 +159,30 @@ impl State {
     }
   }
 
+  pub fn prompt_for_model(&mut self) -> Result<()> {
+    if let nfd::Response::Okay(path) = nfd::open_file_dialog(None, None)? {
+      self.obj_model = Some(Model::load(
+        &self.device,
+        path,
+      )?);
+    }
+    Ok(())
+  }
+
   pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
     let output = self.surface.get_current_frame()?.output;
     let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+    let model = match &self.obj_model {
+      Some(model) => &model,
+      _ => &self.cube_model
+    };
 
     self.renderer.render(
       &self.device,
       &self.queue,
       &view,
-      &self.obj_model,
+      model,
       &self.instance_buffer,
     );
 
@@ -180,19 +196,6 @@ impl State {
       self.config.height = new_size.height;
       self.surface.configure(&self.device, &self.config);
       self.renderer.resize(&self.device, &self.config);
-    }
-  }
-
-  pub fn toggle_light_render(&mut self) {
-    if self.renderer.light_render_enabled() {
-      self.renderer.disable_light_render();
-    } else {
-      self.renderer.enable_light_render(
-        &self.device,
-        self.config.format,
-        Some(Texture::DEPTH_FORMAT),
-        &[ModelVertex::desc()],
-      );
     }
   }
 
