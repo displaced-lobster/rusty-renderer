@@ -1438,6 +1438,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "tarnish"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bytemuck",
+ "cgmath",
+ "env_logger",
+ "fs_extra",
+ "glob",
+ "image",
+ "log",
+ "nfd",
+ "pollster",
+ "rayon",
+ "tobj",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
 name = "termcolor"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1765,26 +1785,6 @@ dependencies = [
  "thiserror",
  "wgpu-types",
  "winapi",
-]
-
-[[package]]
-name = "wgpu-renderer"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bytemuck",
- "cgmath",
- "env_logger",
- "fs_extra",
- "glob",
- "image",
- "log",
- "nfd",
- "pollster",
- "rayon",
- "tobj",
- "wgpu",
- "winit",
 ]
 
 [[package]]
