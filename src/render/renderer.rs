@@ -10,7 +10,7 @@ use crate::{
   color::ColorUniform,
   instance::InstanceRaw,
   light::LightUniform,
-  model::{ModelVertex, Vertex},
+  model::{Model, ModelVertex, Vertex},
   projection::Projection,
   render::{LightRenderer, ModelRenderer},
   texture::Texture,
@@ -97,7 +97,8 @@ impl Renderer {
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     view: &wgpu::TextureView,
-    model: &crate::model::Model,
+    light_model: &Model,
+    model: &Model,
     instance_buffer: &wgpu::Buffer,
   ) {
       let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -130,7 +131,7 @@ impl Renderer {
       if self.render_light {
         self.light_renderer.render(
           &mut render_pass,
-          model,
+          light_model,
           &self.camera_uniform.bind_group,
           &self.light_uniform.bind_group,
         );

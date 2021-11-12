@@ -182,6 +182,7 @@ impl State {
       &self.device,
       &self.queue,
       &view,
+      &self.cube_model,
       model,
       &self.instance_buffer,
     );
