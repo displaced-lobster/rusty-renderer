@@ -1,3 +1,4 @@
+use clap::Parser;
 use winit::{
     event::{
         ElementState,
@@ -25,13 +26,25 @@ mod uniform;
 
 use state::State;
 
+#[derive(Parser, Debug)]
+#[clap(about, author, version)]
+struct Cli {
+    #[clap(short, long)]
+    file: bool,
+}
+
 fn main() {
     env_logger::init();
+    let cli = Cli::parse();
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
     let mut state = pollster::block_on(State::new(&window));
 
-    state.prompt_for_model().unwrap();
+    state.render().unwrap();
+
+    if cli.file {
+        state.prompt_for_file().unwrap();
+    }
 
     let mut last_render_time = std::time::Instant::now();
 

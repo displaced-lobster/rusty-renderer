@@ -1,8 +1,8 @@
 use cgmath::{
     Deg,
-    Quaternion,
-    Rotation3,
-    Vector3,
+    // Quaternion,
+    // Rotation3,
+    // Vector3,
 };
 
 use crate::{
@@ -34,7 +34,7 @@ impl Renderer {
     config: &wgpu::SurfaceConfiguration,
   ) -> Self {
     let camera_uniform = Uniform::new(device, CameraUniform::new(), "camera");
-    let ambient_uniform = Uniform::new(device, ColorUniform { color: [0.5, 0.0, 0.0, 1.0] }, "ambient");
+    let ambient_uniform = Uniform::new(device, ColorUniform { color: [0.3, 0.3, 0.3, 1.0] }, "ambient");
     let light_uniform = Uniform::new(
       device,
       LightUniform {
@@ -98,7 +98,7 @@ impl Renderer {
     queue: &wgpu::Queue,
     view: &wgpu::TextureView,
     light_model: &Model,
-    model: &Model,
+    models: &Vec<Model>,
     instance_buffer: &wgpu::Buffer,
   ) {
       let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -137,25 +137,27 @@ impl Renderer {
         );
       }
 
-      self.model_renderer.render(
-        &mut render_pass,
-        model,
-        &self.ambient_uniform.bind_group,
-        &self.camera_uniform.bind_group,
-        &self.light_uniform.bind_group,
-      );
+      for model in models {
+        self.model_renderer.render(
+          &mut render_pass,
+          model,
+          &self.ambient_uniform.bind_group,
+          &self.camera_uniform.bind_group,
+          &self.light_uniform.bind_group,
+        );
+      }
     }
     queue.submit(std::iter::once(encoder.finish()));
   }
 
-  pub fn update(&mut self, queue: &wgpu::Queue, dt: std::time::Duration) {
+  pub fn update(&mut self, queue: &wgpu::Queue, _dt: std::time::Duration) {
     queue.write_buffer(&self.camera_uniform.buffer, 0, bytemuck::cast_slice(&[self.camera_uniform.uniform]));
 
-    let old_position: Vector3<_> = self.light_uniform.uniform.position.into();
+    // let old_position: Vector3<_> = self.light_uniform.uniform.position.into();
 
-    self.light_uniform.uniform.position = (
-        Quaternion::from_axis_angle((0.0, 1.0, 0.0).into(), Deg(60.0 * dt.as_secs_f32()))* old_position
-    ).into();
+    // self.light_uniform.uniform.position = (
+    //     Quaternion::from_axis_angle((0.0, 1.0, 0.0).into(), Deg(60.0 * dt.as_secs_f32()))* old_position
+    // ).into();
 
     queue.write_buffer(&self.light_uniform.buffer, 0, bytemuck::cast_slice(&[self.light_uniform.uniform]));
   }

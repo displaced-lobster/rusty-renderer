@@ -29,7 +29,7 @@ pub struct State {
   device: wgpu::Device,
   instance_buffer: wgpu::Buffer,
   mouse_pressed: bool,
-  obj_model: Option<Model>,
+  models: Vec<Model>,
   queue: wgpu::Queue,
   renderer: Renderer,
   pub size: winit::dpi::PhysicalSize<u32>,
@@ -110,8 +110,8 @@ impl State {
       cube_model,
       device,
       instance_buffer,
+      models: Vec::<Model>::new(),
       mouse_pressed: false,
-      obj_model: None,
       queue,
       renderer,
       size,
@@ -159,12 +159,9 @@ impl State {
     }
   }
 
-  pub fn prompt_for_model(&mut self) -> Result<()> {
+  pub fn prompt_for_file(&mut self) -> Result<()> {
     if let nfd::Response::Okay(path) = nfd::open_file_dialog(None, None)? {
-      self.obj_model = Some(Model::load(
-        &self.device,
-        path,
-      )?);
+      self.models.push(Model::load(&self.device, path)?);
     }
     Ok(())
   }
@@ -173,17 +170,12 @@ impl State {
     let output = self.surface.get_current_frame()?.output;
     let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-    let model = match &self.obj_model {
-      Some(model) => &model,
-      _ => &self.cube_model
-    };
-
     self.renderer.render(
       &self.device,
       &self.queue,
       &view,
       &self.cube_model,
-      model,
+      &self.models,
       &self.instance_buffer,
     );
 
