@@ -1,5 +1,5 @@
 use anyhow::Result;
-use cgmath::{Vector3, Zero};
+use cgmath::Vector3;
 use rand::Rng;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::path::Path;
@@ -19,6 +19,28 @@ pub struct Model {
 }
 
 impl Model {
+  pub fn cube(device: &wgpu::Device) -> Self {
+    let mut builder = MeshBuilder::new("Cube");
+    let size = 1.0;
+    let up = size * Vector3::unit_y();
+    let right = size * Vector3::unit_x();
+    let forward = size * Vector3::unit_z();
+    let near_corner = Vector3::new(-size / 2.0, 0.0, -size / 2.0);
+    let far_corner = Vector3::new(size / 2.0, size, size / 2.0);
+
+    builder.add_quad(near_corner, forward, right);
+    builder.add_quad(near_corner, right, up);
+    builder.add_quad(near_corner, up, forward);
+
+    builder.add_quad(far_corner, -right, -forward);
+    builder.add_quad(far_corner, -up, -right);
+    builder.add_quad(far_corner, -forward, -up);
+
+    let mesh = builder.build(device);
+
+    Self { meshes: vec![mesh] }
+  }
+
   pub fn load<P: AsRef<Path>>(
     device: &wgpu::Device,
     path: P,
@@ -76,7 +98,11 @@ impl Model {
     let mut builder = MeshBuilder::new("Plane");
     let size = 1.0;
 
-    builder.add_quad(size, Vector3::zero());
+    builder.add_quad(
+      Vector3::new(-size / 2.0, 0.0, -size / 2.0),
+      Vector3::new(size, 0.0, 0.0),
+      Vector3::new(0.0, 0.0, size),
+    );
 
     let mesh = builder.build(device);
 

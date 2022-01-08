@@ -50,7 +50,7 @@ fn main() {
     state.render().unwrap();
 
     if cli.cube {
-        state.add_cube().unwrap();
+        state.add_cube();
     }
     if cli.file {
         state.prompt_for_file().unwrap();

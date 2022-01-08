@@ -119,17 +119,8 @@ impl State {
     }
   }
 
-  pub fn add_cube(&mut self) -> Result<()> {
-    let res_dir = std::path::Path::new(env!("OUT_DIR")).join("res");
-
-    self.models.push(
-      Model::load(
-        &self.device,
-        res_dir.join("cube.obj"),
-      )?
-    );
-
-    Ok(())
+  pub fn add_cube(&mut self) {
+    self.models.push(Model::cube(&self.device));
   }
 
   pub fn add_model_primitive(&mut self, primitive: ModelPrimitive) {
@@ -158,6 +149,9 @@ impl State {
         match (*key, *state) {
           (VirtualKeyCode::L, ElementState::Pressed) => {
             self.renderer.toggle_light_render();
+          }
+          (VirtualKeyCode::R, ElementState::Pressed) => {
+            self.renderer.toggle_light_rotation();
           }
           _ => {
             self.camera_rig.controller.process_keyboard(*key, *state);

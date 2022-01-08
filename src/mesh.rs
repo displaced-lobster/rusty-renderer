@@ -1,4 +1,4 @@
-use cgmath::Vector3;
+use cgmath::{InnerSpace, Vector3};
 use wgpu::util::DeviceExt;
 
 const COLOR: [f32;4] = [1.0, 0.1, 0.1, 1.0];
@@ -44,17 +44,13 @@ impl MeshBuilder {
     }
   }
 
-  pub fn add_quad(&mut self, size: f32, offset: Vector3<f32>) {
-    let vertices = [
-      Vector3::new(-size, 0.0, -size),
-      Vector3::new(-size, 0.0, size),
-      Vector3::new(size, 0.0, size),
-      Vector3::new(size, 0.0, -size),
-    ];
+  pub fn add_quad(&mut self, position: Vector3<f32>, width: Vector3<f32>, length: Vector3<f32>) {
+    let normal = length.cross(width).normalize();
 
-    for vertex in vertices {
-      self.add_vertex(vertex + offset, Vector3::unit_y());
-    }
+    self.add_vertex(position, normal);
+    self.add_vertex(position + length, normal);
+    self.add_vertex(position + width + length, normal);
+    self.add_vertex(position + width, normal);
 
     let base_index = self.vertices.len() as u32 - 4;
 

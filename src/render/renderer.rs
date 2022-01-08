@@ -1,8 +1,8 @@
 use cgmath::{
     Deg,
-    // Quaternion,
-    // Rotation3,
-    // Vector3,
+    Quaternion,
+    Rotation3,
+    Vector3,
 };
 
 use crate::{
@@ -27,6 +27,7 @@ pub struct Renderer {
   model_renderer: ModelRenderer,
   projection: Projection,
   render_light: bool,
+  rotate_light: bool,
 }
 
 impl Renderer {
@@ -81,11 +82,16 @@ impl Renderer {
       model_renderer,
       projection,
       render_light: false,
+      rotate_light: false,
     }
   }
 
   pub fn toggle_light_render(&mut self) {
     self.render_light = !self.render_light;
+  }
+
+  pub fn toggle_light_rotation(&mut self) {
+    self.rotate_light = !self.rotate_light;
   }
 
   pub fn resize(&mut self, device: &wgpu::Device, config: &wgpu::SurfaceConfiguration) {
@@ -151,14 +157,16 @@ impl Renderer {
     queue.submit(std::iter::once(encoder.finish()));
   }
 
-  pub fn update(&mut self, queue: &wgpu::Queue, _dt: std::time::Duration) {
+  pub fn update(&mut self, queue: &wgpu::Queue, dt: std::time::Duration) {
     queue.write_buffer(&self.camera_uniform.buffer, 0, bytemuck::cast_slice(&[self.camera_uniform.uniform]));
 
-    // let old_position: Vector3<_> = self.light_uniform.uniform.position.into();
+    if self.rotate_light {
+      let old_position: Vector3<_> = self.light_uniform.uniform.position.into();
 
-    // self.light_uniform.uniform.position = (
-    //     Quaternion::from_axis_angle((0.0, 1.0, 0.0).into(), Deg(60.0 * dt.as_secs_f32()))* old_position
-    // ).into();
+      self.light_uniform.uniform.position = (
+          Quaternion::from_axis_angle((0.0, 1.0, 0.0).into(), Deg(60.0 * dt.as_secs_f32()))* old_position
+      ).into();
+    }
 
     queue.write_buffer(&self.light_uniform.buffer, 0, bytemuck::cast_slice(&[self.light_uniform.uniform]));
   }
