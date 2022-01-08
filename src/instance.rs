@@ -1,6 +1,6 @@
 use cgmath::{Matrix3, Matrix4, Quaternion, Vector3};
 
-use crate::model;
+use crate::mesh;
 
 pub struct Instance {
     pub position: Vector3<f32>,
@@ -25,7 +25,7 @@ pub struct InstanceRaw {
     normal: [[f32; 3]; 3],
 }
 
-impl model::Vertex for InstanceRaw {
+impl mesh::Vertex for InstanceRaw {
     fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         use std::mem;
         wgpu::VertexBufferLayout {

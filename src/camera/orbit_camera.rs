@@ -146,7 +146,7 @@ impl CameraController<OrbitCamera> for OrbitCameraController {
     camera.eye += forward * (self.amount_forward - self.amount_backward) * self.speed * dt;
     camera.eye += right * (self.amount_right - self.amount_left) * self.speed * dt;
 
-    camera.eye += self.scroll * forward_norm;
+    camera.eye += self.scroll * 0.01 * forward;
 
 
     self.rotate_horizontal = 0.0;

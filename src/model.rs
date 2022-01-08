@@ -1,54 +1,21 @@
 use anyhow::Result;
+use cgmath::{Vector3, Zero};
+use rand::Rng;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::path::Path;
 use tobj::LoadOptions;
 use wgpu::util::DeviceExt;
 
-use crate::mesh::Mesh;
+use crate::mesh::{Mesh, MeshBuilder, MeshVertex};
 
-pub trait Vertex {
-  fn desc<'a>() -> wgpu::VertexBufferLayout<'a>;
-}
+const MODEL_COLOR: [f32;4] = [1.0, 0.1, 0.1, 1.0];
 
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct ModelVertex {
-  position: [f32; 3],
-  normal: [f32; 3],
-  color: [f32; 4],
-}
-
-impl Vertex for ModelVertex {
-  fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
-    use std::mem;
-
-    wgpu::VertexBufferLayout {
-      array_stride: mem::size_of::<ModelVertex>() as wgpu::BufferAddress,
-      step_mode: wgpu::VertexStepMode::Vertex,
-      attributes: &[
-        wgpu::VertexAttribute {
-          offset: 0,
-          shader_location: 0,
-          format: wgpu::VertexFormat::Float32x3,
-        },
-        wgpu::VertexAttribute {
-          offset: mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
-          shader_location: 1,
-          format: wgpu::VertexFormat::Float32x3,
-        },
-        wgpu::VertexAttribute {
-          offset: mem::size_of::<[f32; 6]>() as wgpu::BufferAddress,
-          shader_location: 2,
-          format: wgpu::VertexFormat::Float32x4,
-        },
-      ],
-    }
-  }
+pub enum ModelPrimitive {
+  Plane,
 }
 
 pub struct Model {
   pub meshes: Vec<Mesh>,
-
 }
 
 impl Model {
@@ -63,7 +30,7 @@ impl Model {
     })?;
     let meshes = obj_models.iter().map(|m| {
       let vertices = (0..m.mesh.positions.len() / 3).into_par_iter().map(|i| {
-        ModelVertex {
+        MeshVertex {
           position: [
             m.mesh.positions[i * 3],
             m.mesh.positions[i * 3 + 1],
@@ -74,7 +41,7 @@ impl Model {
             m.mesh.normals[i * 3 + 1],
             m.mesh.normals[i * 3 + 2],
           ].into(),
-          color: [0.0, 1.0, 0.0, 1.0],
+          color: MODEL_COLOR,
         }
       }).collect::<Vec<_>>();
 
@@ -104,11 +71,41 @@ impl Model {
 
     Ok(Self { meshes })
   }
-}
 
+  pub fn plane(device: &wgpu::Device) -> Self {
+    let mut builder = MeshBuilder::new("Plane");
+    let size = 1.0;
 
-#[repr(C)]
-#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct ModelUniform {
-    pub color: [f32; 4],
+    builder.add_quad(size, Vector3::zero());
+
+    let mesh = builder.build(device);
+
+    Self { meshes: vec![mesh] }
+  }
+
+  pub fn surface(device: &wgpu::Device) -> Self {
+    let mut builder = MeshBuilder::new("Quad Grid");
+    let count = 16;
+    let half_count = count as i32 / 2;
+    let height_max = 0.25;
+    let mut rng = rand::thread_rng();
+    let size = 0.25;
+
+    for i in -half_count..half_count + 1 {
+      let z = 2.0 * size * i as f32;
+
+      for j in -half_count..half_count + 1 {
+        let x = 2.0 * size * j as f32;
+        let y = rng.gen_range(0.0..height_max);
+        let position = Vector3::new(x, y, z);
+        let link = i > -half_count && j > -half_count;
+
+        builder.add_linked_quad(position, link, count + 1);
+      }
+    }
+
+    let mesh = builder.build(device);
+
+    Self { meshes: vec![mesh] }
+  }
 }

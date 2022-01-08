@@ -16,7 +16,7 @@ use wgpu::util::DeviceExt;
 use crate::{
   camera::{CameraController, CameraRig, OrbitCamera, OrbitCameraController},
   instance::Instance,
-  model::Model,
+  model::{Model, ModelPrimitive},
   render::Renderer,
 };
 
@@ -117,6 +117,33 @@ impl State {
       size,
       surface,
     }
+  }
+
+  pub fn add_cube(&mut self) -> Result<()> {
+    let res_dir = std::path::Path::new(env!("OUT_DIR")).join("res");
+
+    self.models.push(
+      Model::load(
+        &self.device,
+        res_dir.join("cube.obj"),
+      )?
+    );
+
+    Ok(())
+  }
+
+  pub fn add_model_primitive(&mut self, primitive: ModelPrimitive) {
+    let model = match primitive {
+      ModelPrimitive::Plane => Model::plane(&self.device)
+    };
+
+    self.models.push(model);
+  }
+
+  pub fn add_surface(&mut self) {
+    let model = Model::surface(&self.device);
+
+    self.models.push(model);
   }
 
   pub fn input(&mut self, event: &DeviceEvent) -> bool {

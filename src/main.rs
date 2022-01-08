@@ -24,13 +24,20 @@ mod state;
 mod texture;
 mod uniform;
 
+use model::ModelPrimitive;
 use state::State;
 
 #[derive(Parser, Debug)]
 #[clap(about, author, version)]
 struct Cli {
     #[clap(short, long)]
+    cube: bool,
+    #[clap(short, long)]
     file: bool,
+    #[clap(short, long)]
+    plane: bool,
+    #[clap(short, long)]
+    surface: bool,
 }
 
 fn main() {
@@ -42,8 +49,17 @@ fn main() {
 
     state.render().unwrap();
 
+    if cli.cube {
+        state.add_cube().unwrap();
+    }
     if cli.file {
         state.prompt_for_file().unwrap();
+    }
+    if cli.plane {
+        state.add_model_primitive(ModelPrimitive::Plane);
+    }
+    if cli.surface {
+        state.add_surface();
     }
 
     let mut last_render_time = std::time::Instant::now();

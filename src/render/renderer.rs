@@ -10,7 +10,8 @@ use crate::{
   color::ColorUniform,
   instance::InstanceRaw,
   light::LightUniform,
-  model::{Model, ModelVertex, Vertex},
+  mesh::{MeshVertex, Vertex},
+  model::Model,
   projection::Projection,
   render::{LightRenderer, ModelRenderer},
   texture::Texture,
@@ -47,7 +48,7 @@ impl Renderer {
 
     let depth_format = Some(Texture::DEPTH_FORMAT);
     let depth_texture = Texture::create_depth_texture(device, config, "depth_texture");
-    let vertex_layouts = [ModelVertex::desc(), InstanceRaw::desc()];
+    let vertex_layouts = [MeshVertex::desc(), InstanceRaw::desc()];
     let light_renderer = LightRenderer::new(
       device,
       &[
