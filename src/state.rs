@@ -44,6 +44,7 @@ impl State {
       &wgpu::RequestAdapterOptions {
         power_preference: wgpu::PowerPreference::default(),
         compatible_surface: Some(&surface),
+        force_fallback_adapter: false,
       },
     ).await.unwrap();
     let (device, queue) = adapter.request_device(
@@ -66,7 +67,6 @@ impl State {
     surface.configure(&device, &config);
 
     let camera_rig = CameraRig::new((0.0, 5.0, 10.0));
-
     let mut renderer = Renderer::new(&device, &config);
 
     renderer.update_camera_uniform(&camera_rig.camera);
@@ -185,7 +185,7 @@ impl State {
   }
 
   pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-    let output = self.surface.get_current_frame()?.output;
+    let output = self.surface.get_current_texture()?;
     let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
     self.renderer.render(
@@ -196,6 +196,8 @@ impl State {
       &self.models,
       &self.instance_buffer,
     );
+
+    output.present();
 
     Ok(())
   }

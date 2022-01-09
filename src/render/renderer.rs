@@ -41,8 +41,9 @@ impl Renderer {
       device,
       LightUniform {
         position: [2.0, 2.0, 2.0],
-        _padding: 0,
+        _position_padding: 0,
         color: [1.0, 1.0, 1.0],
+        _color_padding: 0,
       },
       "light",
     );

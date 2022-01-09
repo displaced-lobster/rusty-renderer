@@ -22,12 +22,12 @@ pub fn create_render_pipeline(
         layout: Some(layout),
         vertex: wgpu::VertexState {
             module: &shader,
-            entry_point: "main",
+            entry_point: "vs_main",
             buffers: vertex_layouts,
         },
         fragment: Some(wgpu::FragmentState {
             module: &shader,
-            entry_point: "main",
+            entry_point: "fs_main",
             targets: &[wgpu::ColorTargetState {
                 format: color_format,
                 blend: Some(wgpu::BlendState{
@@ -43,7 +43,7 @@ pub fn create_render_pipeline(
             front_face: wgpu::FrontFace::Ccw,
             cull_mode: Some(wgpu::Face::Back),
             polygon_mode: wgpu::PolygonMode::Fill,
-            clamp_depth: false,
+            unclipped_depth: false,
             conservative: false,
         },
         depth_stencil: depth_format.map(|format| wgpu::DepthStencilState {
@@ -58,5 +58,6 @@ pub fn create_render_pipeline(
             mask: !0,
             alpha_to_coverage_enabled: false,
         },
+        multiview: None,
     })
 }
