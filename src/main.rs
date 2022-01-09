@@ -30,12 +30,18 @@ use state::State;
 #[derive(Parser, Debug)]
 #[clap(about, author, version)]
 struct Cli {
+    #[clap(long, default_value_t = 8)]
+    count: u32,
     #[clap(short, long)]
     cube: bool,
     #[clap(short, long)]
     file: bool,
+    #[clap(long, default_value_t = 0.5)]
+    max: f32,
     #[clap(short, long)]
     plane: bool,
+    #[clap(long, default_value_t = 1.0)]
+    size: f32,
     #[clap(short, long)]
     surface: bool,
 }
@@ -50,16 +56,16 @@ fn main() {
     state.render().unwrap();
 
     if cli.cube {
-        state.add_cube();
+        state.add_model_primitive(ModelPrimitive::Cube, cli.size);
     }
     if cli.file {
         state.prompt_for_file().unwrap();
     }
     if cli.plane {
-        state.add_model_primitive(ModelPrimitive::Plane);
+        state.add_model_primitive(ModelPrimitive::Plane, cli.size);
     }
     if cli.surface {
-        state.add_surface();
+        state.add_surface(cli.count, cli.size, cli.max);
     }
 
     let mut last_render_time = std::time::Instant::now();

@@ -119,20 +119,17 @@ impl State {
     }
   }
 
-  pub fn add_cube(&mut self) {
-    self.models.push(Model::cube(&self.device));
-  }
-
-  pub fn add_model_primitive(&mut self, primitive: ModelPrimitive) {
+  pub fn add_model_primitive(&mut self, primitive: ModelPrimitive, size: f32) {
     let model = match primitive {
-      ModelPrimitive::Plane => Model::plane(&self.device)
+      ModelPrimitive::Cube => Model::cube(&self.device, size),
+      ModelPrimitive::Plane => Model::plane(&self.device, size),
     };
 
     self.models.push(model);
   }
 
-  pub fn add_surface(&mut self) {
-    let model = Model::surface(&self.device);
+  pub fn add_surface(&mut self, count: u32, size: f32, height_max: f32) {
+    let model = Model::surface(&self.device, count, size, height_max);
 
     self.models.push(model);
   }

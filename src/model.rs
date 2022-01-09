@@ -11,6 +11,7 @@ use crate::mesh::{Mesh, MeshBuilder, MeshVertex};
 const MODEL_COLOR: [f32;4] = [1.0, 0.1, 0.1, 1.0];
 
 pub enum ModelPrimitive {
+  Cube,
   Plane,
 }
 
@@ -19,14 +20,13 @@ pub struct Model {
 }
 
 impl Model {
-  pub fn cube(device: &wgpu::Device) -> Self {
+  pub fn cube(device: &wgpu::Device, size: f32) -> Self {
     let mut builder = MeshBuilder::new("Cube");
-    let size = 1.0;
     let up = size * Vector3::unit_y();
     let right = size * Vector3::unit_x();
     let forward = size * Vector3::unit_z();
-    let near_corner = Vector3::new(-size / 2.0, 0.0, -size / 2.0);
-    let far_corner = Vector3::new(size / 2.0, size, size / 2.0);
+    let near_corner = Vector3::new(-size / 2.0, -size / 2.0, -size / 2.0);
+    let far_corner = Vector3::new(size / 2.0, size / 2.0, size / 2.0);
 
     builder.add_quad(near_corner, forward, right);
     builder.add_quad(near_corner, right, up);
@@ -94,9 +94,8 @@ impl Model {
     Ok(Self { meshes })
   }
 
-  pub fn plane(device: &wgpu::Device) -> Self {
+  pub fn plane(device: &wgpu::Device, size: f32) -> Self {
     let mut builder = MeshBuilder::new("Plane");
-    let size = 1.0;
 
     builder.add_quad(
       Vector3::new(-size / 2.0, 0.0, -size / 2.0),
@@ -109,13 +108,10 @@ impl Model {
     Self { meshes: vec![mesh] }
   }
 
-  pub fn surface(device: &wgpu::Device) -> Self {
+  pub fn surface(device: &wgpu::Device, count: u32, size: f32, height_max: f32) -> Self {
     let mut builder = MeshBuilder::new("Quad Grid");
-    let count = 16;
     let half_count = count as i32 / 2;
-    let height_max = 0.25;
     let mut rng = rand::thread_rng();
-    let size = 0.25;
 
     for i in -half_count..half_count + 1 {
       let z = 2.0 * size * i as f32;
