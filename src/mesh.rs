@@ -30,6 +30,13 @@ impl MeshBuilder {
     }
   }
 
+  pub fn add_face(&mut self, indices: (u32, u32, u32)) {
+    let (i1, i2, i3) = indices;
+    self.indices.push(i1);
+    self.indices.push(i2);
+    self.indices.push(i3);
+  }
+
   pub fn add_linked_quad(&mut self, position: Vector3<f32>, link: bool, index_offset: u32) {
     self.add_vertex(position, Vector3::unit_y());
 
@@ -39,8 +46,8 @@ impl MeshBuilder {
       let i2 = i0 - index_offset;
       let i3 = i0 - index_offset - 1;
 
-      self.add_triangle((i0, i2, i1));
-      self.add_triangle((i2, i3, i1));
+      self.add_face((i0, i2, i1));
+      self.add_face((i2, i3, i1));
     }
   }
 
@@ -54,15 +61,20 @@ impl MeshBuilder {
 
     let base_index = self.vertices.len() as u32 - 4;
 
-    self.add_triangle((base_index, base_index + 1, base_index + 2));
-    self.add_triangle((base_index, base_index + 2, base_index + 3));
+    self.add_face((base_index, base_index + 1, base_index + 2));
+    self.add_face((base_index, base_index + 2, base_index + 3));
   }
 
-  pub fn add_triangle(&mut self, indices: (u32, u32, u32)) {
-    let (i1, i2, i3) = indices;
-    self.indices.push(i1);
-    self.indices.push(i2);
-    self.indices.push(i3);
+  pub fn add_triangle(&mut self, v0: Vector3<f32>, v1: Vector3<f32>, v2: Vector3<f32>) {
+    let normal = (v1 - v0).cross(v2 - v0).normalize();
+
+    self.add_vertex(v0, normal);
+    self.add_vertex(v1, normal);
+    self.add_vertex(v2, normal);
+
+    let base_index = self.vertices.len() as u32 - 3;
+
+    self.add_face((base_index, base_index + 1, base_index + 2));
   }
 
   pub fn add_vertex<P, N>(&mut self, position: P, normal: N)

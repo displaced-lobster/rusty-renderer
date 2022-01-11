@@ -119,6 +119,12 @@ impl State {
     }
   }
 
+  pub fn add_house(&mut self, width: f32, length: f32, height: f32) {
+    let model = Model::house(&self.device, width, length, height);
+
+    self.models.push(model);
+  }
+
   pub fn add_model_primitive(&mut self, primitive: ModelPrimitive, size: f32) {
     let model = match primitive {
       ModelPrimitive::Cube => Model::cube(&self.device, size),

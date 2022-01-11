@@ -36,6 +36,12 @@ struct Cli {
     cube: bool,
     #[clap(short, long)]
     file: bool,
+    #[clap(long, default_value_t = 1.0)]
+    height: f32,
+    #[clap(short, long)]
+    house: bool,
+    #[clap(long, default_value_t = 1.0)]
+    length: f32,
     #[clap(long, default_value_t = 0.5)]
     max: f32,
     #[clap(short, long)]
@@ -44,6 +50,8 @@ struct Cli {
     size: f32,
     #[clap(short, long)]
     surface: bool,
+    #[clap(long, default_value_t = 1.0)]
+    width: f32,
 }
 
 fn main() {
@@ -60,6 +68,9 @@ fn main() {
     }
     if cli.file {
         state.prompt_for_file().unwrap();
+    }
+    if cli.house {
+        state.add_house(cli.width, cli.length, cli.height);
     }
     if cli.plane {
         state.add_model_primitive(ModelPrimitive::Plane, cli.size);
